@@ -23,12 +23,13 @@ export default function TasksPage() {
                   alignItems: 'center',
                   padding: '16px 20px',
                   borderBottom: '1px solid #eee',
-                  backgroundColor: isMeta ? '#f8f9fa' : 'white', // Fondo sutil para metas
-                  borderLeft: isMeta ? '4px solid #0284c7' : '4px solid transparent', // Borde azul para metas
+                  backgroundColor: isMeta ? '#f8f9fa' : 'white', 
+                  // CAMBIO AQUÍ: Borde azul para metas, borde naranja para actividades
+                  borderLeft: isMeta ? '4px solid #0284c7' : '4px solid #c2410c', 
                   transition: 'background-color 0.2s'
                 }}>
                   
-                  {/* 1. CHECKBOX O ÍCONO (Aquí quitamos el cuadro para las metas) */}
+                  {/* 1. CHECKBOX O ÍCONO */}
                   <div style={{ marginRight: '15px', minWidth: '24px', display: 'flex', justifyContent: 'center' }}>
                     {!isMeta ? (
                       <input 
@@ -38,7 +39,6 @@ export default function TasksPage() {
                         style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#4a90e2' }}
                       />
                     ) : (
-                       // En vez de checkbox, ponemos un ícono visual para la meta
                        <span className="material-icons" style={{ color: '#0284c7', fontSize: '20px' }}>flag</span>
                     )}
                   </div>
@@ -49,34 +49,31 @@ export default function TasksPage() {
                       <h4 style={{ margin: 0, fontSize: '16px', color: '#333', fontWeight: isMeta ? '600' : '400' }}>
                         {task.title}
                       </h4>
-                      {/* Etiqueta opcional "Meta" al lado del título */}
-                      {isMeta && (
+                      
+                      {/* ETIQUETAS DE COLOR */}
+                      {isMeta ? (
                         <span style={{ fontSize: '10px', backgroundColor: '#e0f2fe', color: '#0284c7', padding: '1px 6px', borderRadius: '4px', textTransform: 'uppercase', fontWeight: 'bold' }}>
                           Meta
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '10px', backgroundColor: '#ffedd5', color: '#c2410c', padding: '1px 6px', borderRadius: '4px', textTransform: 'uppercase', fontWeight: 'bold' }}>
+                          Actividad
                         </span>
                       )}
                     </div>
                     
                     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '15px', fontSize: '13px', color: '#666' }}>
-                      {/* Fecha */}
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span className="material-icons" style={{ fontSize: '14px' }}>calendar_today</span>
                         {new Date(task.dueDate).toLocaleDateString()}
                       </span>
 
-                      {/* 2. CAMBIO DE NOMBRE: "Tarea" -> "Actividad" */}
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span className="material-icons" style={{ fontSize: '14px' }}>category</span>
-                        {isMeta ? 'Meta' : 'Actividad'} 
-                      </span>
-
-                      {/* 3. VINCULACIÓN: Mostrar a qué meta pertenece (Solo para Actividades) */}
                       {!isMeta && task.goalTitle && (
                         <span style={{ 
                           display: 'flex', 
                           alignItems: 'center', 
                           gap: '4px',
-                          backgroundColor: '#f3f4f6', // Fondo gris suave
+                          backgroundColor: '#f3f4f6', 
                           padding: '2px 8px',
                           borderRadius: '12px',
                           fontSize: '12px',
