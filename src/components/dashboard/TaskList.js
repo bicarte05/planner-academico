@@ -4,9 +4,8 @@ import Link from 'next/link';
 import { useTasks } from '../../context/TaskContext';
 
 export default function TaskList() {
-  const { tasks, toggleTaskCompleted, openEditModal, deleteTask } = useTasks();
+  const { tasks, openEditModal, deleteTask } = useTasks();
 
-  // Filtramos pendientes. Las metas siempre aparecen si no están completadas.
   const pendingTasks = tasks.filter(task => !task.completed);
 
   return (
@@ -17,58 +16,47 @@ export default function TaskList() {
         <>
           <ul>
             {pendingTasks.slice(0, 5).map(task => {
-              // Detectamos si es meta para aplicar lógica especial
               const isMeta = task.category === 'meta';
 
               return (
                 <li key={task.id} className={`task-item ${isMeta ? 'is-meta' : ''}`}>
-                  <input 
-                    type="checkbox" 
-                    className="task-item-checkbox"
-                    checked={task.completed}
-                    onChange={() => !isMeta && toggleTaskCompleted(task.id)} 
-                    // BLOQUEO: Si es meta, desactivamos el checkbox
-                    disabled={isMeta}
-                    style={isMeta ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                  />
+                  {/* HE ELIMINADO EL CHECKBOX AQUÍ COMO PEDISTE */}
                   
                   <div className="task-item-info">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <h4>{task.title}</h4>
-                      {/* ETIQUETA VISUAL: Solo para metas */}
-                      {isMeta && (
-                        <span style={{
-                          fontSize: '10px',
-                          backgroundColor: '#e0f2fe',
-                          color: '#0284c7',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          fontWeight: 'bold',
-                          textTransform: 'uppercase'
-                        }}>
-                          Meta
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h4>{task.title}</h4>
+                        
+                        {/* Etiqueta azul si es una META principal */}
+                        {isMeta && (
+                          <span className="badge meta-badge">
+                            Meta
+                          </span>
+                        )}
+                      </div>
+
+                      {/* NUEVO: Si es una tarea (no meta) y tiene meta asociada, la mostramos */}
+                      {!isMeta && task.goalTitle && (
+                        <span className="goal-reference">
+                          <span className="material-icons" style={{ fontSize: '12px', verticalAlign: 'text-top', marginRight: '3px' }}>flag</span>
+                          {task.goalTitle}
                         </span>
                       )}
                     </div>
-                    {/* Opcional: Mostrar fecha si es relevante */}
-                    {task.dueDate && (
-                      <small style={{ color: '#888', fontSize: '11px' }}>
-                        {new Date(task.dueDate).toLocaleDateString()}
-                      </small>
-                    )}
                   </div>
                   
                   <div className="task-item-actions">
                     <button 
                       className="task-action-button edit" 
                       onClick={() => openEditModal(task)}
+                      title="Editar"
                     >
                       <span className="material-icons">edit</span>
                     </button>
-                    {/* Solo permitimos borrar tareas normales desde aquí por seguridad, o ambas si prefieres */}
                     <button 
                       className="task-action-button delete" 
                       onClick={() => deleteTask(task.id)}
+                      title="Eliminar"
                     >
                       <span className="material-icons">delete</span>
                     </button>
@@ -88,10 +76,35 @@ export default function TaskList() {
         </div>
       )}
 
-      {/* Estilos inline extra para diferenciar la meta visualmente */}
       <style jsx>{`
         .is-meta {
-          background-color: #fafafa; /* Fondo sutilmente distinto */
+          background-color: #fafafa;
+          border-left: 3px solid #0284c7; /* Borde azul para destacar metas */
+        }
+        .task-item {
+          padding: 12px; /* Un poco más de espacio al quitar el checkbox */
+        }
+        .badge {
+          font-size: 10px;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-weight: bold;
+          text-transform: uppercase;
+        }
+        .meta-badge {
+          background-color: #e0f2fe;
+          color: #0284c7;
+        }
+        /* Estilo para el nombre de la meta asociada */
+        .goal-reference {
+          font-size: 11px;
+          color: #666;
+          display: flex;
+          align-items: center;
+          background-color: #f3f4f6;
+          padding: 2px 6px;
+          border-radius: 4px;
+          width: fit-content;
         }
       `}</style>
     </div>

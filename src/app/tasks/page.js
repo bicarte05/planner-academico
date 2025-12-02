@@ -1,64 +1,123 @@
 'use client';
-import { useTasks } from '../../context/TaskContext';
+import React from 'react';
+import { useTasks } from '../../context/TaskContext'; 
 
 export default function TasksPage() {
   const { tasks, toggleTaskCompleted, openEditModal, deleteTask } = useTasks();
-  const sortedTasks = [...tasks].sort((a, b) => 
-    new Date(a.dueDate) - new Date(b.dueDate)
-  );
 
   return (
-    <div className="tasks-page-container">
-      <h1 className="dashboard-header">Todas las Tareas</h1>
+    <div style={{ padding: '20px', maxWidth: '1000px', margin: '0 auto' }}>
+      <h2 style={{ marginBottom: '20px', fontSize: '28px', fontWeight: 'bold', color: '#333' }}>
+        Todas las Tareas
+      </h2>
       
-      <ul className="tasks-list">
-        {sortedTasks.length === 0 ? (
-          <li className="empty-state" style={{padding: '2rem'}}>
-            <span className="material-icons empty-state-icon">check_circle</span>
-            <p>No hay tareas pendientes. ¡Añade una!</p>
-          </li>
+      <div className="dashboard-card" style={{ padding: '0', overflow: 'hidden', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+        {tasks.length > 0 ? (
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            {tasks.map(task => {
+              const isMeta = task.category === 'meta';
+
+              return (
+                <li key={task.id} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '16px 20px',
+                  borderBottom: '1px solid #eee',
+                  backgroundColor: isMeta ? '#f8f9fa' : 'white', // Fondo sutil para metas
+                  borderLeft: isMeta ? '4px solid #0284c7' : '4px solid transparent', // Borde azul para metas
+                  transition: 'background-color 0.2s'
+                }}>
+                  
+                  {/* 1. CHECKBOX O ÍCONO (Aquí quitamos el cuadro para las metas) */}
+                  <div style={{ marginRight: '15px', minWidth: '24px', display: 'flex', justifyContent: 'center' }}>
+                    {!isMeta ? (
+                      <input 
+                        type="checkbox" 
+                        checked={task.completed}
+                        onChange={() => toggleTaskCompleted(task.id)}
+                        style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#4a90e2' }}
+                      />
+                    ) : (
+                       // En vez de checkbox, ponemos un ícono visual para la meta
+                       <span className="material-icons" style={{ color: '#0284c7', fontSize: '20px' }}>flag</span>
+                    )}
+                  </div>
+
+                  {/* INFORMACIÓN PRINCIPAL */}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                      <h4 style={{ margin: 0, fontSize: '16px', color: '#333', fontWeight: isMeta ? '600' : '400' }}>
+                        {task.title}
+                      </h4>
+                      {/* Etiqueta opcional "Meta" al lado del título */}
+                      {isMeta && (
+                        <span style={{ fontSize: '10px', backgroundColor: '#e0f2fe', color: '#0284c7', padding: '1px 6px', borderRadius: '4px', textTransform: 'uppercase', fontWeight: 'bold' }}>
+                          Meta
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '15px', fontSize: '13px', color: '#666' }}>
+                      {/* Fecha */}
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span className="material-icons" style={{ fontSize: '14px' }}>calendar_today</span>
+                        {new Date(task.dueDate).toLocaleDateString()}
+                      </span>
+
+                      {/* 2. CAMBIO DE NOMBRE: "Tarea" -> "Actividad" */}
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span className="material-icons" style={{ fontSize: '14px' }}>category</span>
+                        {isMeta ? 'Meta' : 'Actividad'} 
+                      </span>
+
+                      {/* 3. VINCULACIÓN: Mostrar a qué meta pertenece (Solo para Actividades) */}
+                      {!isMeta && task.goalTitle && (
+                        <span style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '4px',
+                          backgroundColor: '#f3f4f6', // Fondo gris suave
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          color: '#555'
+                        }}>
+                          <span className="material-icons" style={{ fontSize: '12px' }}>flag</span>
+                          {task.goalTitle}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* BOTONES DE ACCIÓN */}
+                  <div style={{ display: 'flex', gap: '8px', marginLeft: '10px' }}>
+                    <button 
+                      onClick={() => openEditModal(task)}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#4a90e2', padding: '4px' }}
+                      title="Editar"
+                    >
+                      <span className="material-icons">edit</span>
+                    </button>
+                    <button 
+                      onClick={() => deleteTask(task.id)}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#dc3545', padding: '4px' }}
+                      title="Eliminar"
+                    >
+                      <span className="material-icons">delete</span>
+                    </button>
+                  </div>
+
+                </li>
+              );
+            })}
+          </ul>
         ) : (
-          sortedTasks.map(task => (
-            <li key={task.id} className={`task-item ${task.completed ? 'completed' : ''}`}>
-              <input
-                type="checkbox"
-                className="task-item-checkbox"
-                checked={task.completed}
-                onChange={() => toggleTaskCompleted(task.id)}
-              />
-              <div className="task-item-info">
-                <h4>{task.title}</h4>
-                <div className="task-item-details">
-                  <span>
-                    <span className="material-icons">calendar_today</span>
-                    {new Date(task.dueDate).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                  </span>
-                  <span>
-                    <span className="material-icons">category</span>
-                    {task.category.charAt(0).toUpperCase() + task.category.slice(1)}
-                  </span>
-                </div>
-              </div>
-              
-              {}
-              <div className="task-item-actions">
-                <button 
-                  className="task-action-button edit" 
-                  onClick={() => openEditModal(task)} // T4.6
-                >
-                  <span className="material-icons">edit</span>
-                </button>
-                <button 
-                  className="task-action-button delete" 
-                  onClick={() => deleteTask(task.id)} // T4.5
-                >
-                  <span className="material-icons">delete</span>
-                </button>
-              </div>
-            </li>
-          ))
+          <div style={{ padding: '60px', textAlign: 'center', color: '#999' }}>
+            <span className="material-icons" style={{ fontSize: '48px', marginBottom: '10px', display: 'block' }}>assignment</span>
+            <p>No tienes tareas registradas aún.</p>
+          </div>
         )}
-      </ul>
+      </div>
     </div>
   );
 }
