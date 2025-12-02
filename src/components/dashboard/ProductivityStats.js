@@ -9,14 +9,14 @@ export default function ProductivityStats({ completedTasks = 0, totalTasks = 0 }
       <h3>Productividad Semanal</h3>
       <div className="stats-card-content">
         <span className="stats-main-value" style={{color: 'var(--card-text-blue)'}}>{completionPercentage}%</span>
-        <p className="stats-description">de tareas completadas</p>
+        <p className="stats-description">de actividades completadas</p>
         <div className="workload-progress-bar-container" style={{width: '70%', backgroundColor: 'rgba(255,255,255,0.7)'}}>
             <div 
                 className="workload-progress-bar-fill" 
                 style={{ width: `${completionPercentage}%`, backgroundColor: 'var(--card-text-blue)' }}
             ></div>
         </div>
-        <p className="stats-detail-text">Completadas: {completedTasks} de {totalTasks} tareas</p>
+        <p className="stats-detail-text">Completadas: {completedTasks} de {totalTasks} actividades</p>
       </div>
     </div>
   );

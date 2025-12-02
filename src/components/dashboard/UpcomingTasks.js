@@ -1,11 +1,12 @@
+// src/components/dashboard/UpcomingTasks.js
 import React from 'react';
 import Link from 'next/link';
 
+// MODIFICADO: El array 'tasks' ahora es el array pre-calculado 'upcomingTasks' del contexto.
 export default function UpcomingTasks({ tasks = [] }) {
-  const upcoming = tasks
-    .filter(task => !task.completed && new Date(task.dueDate) >= new Date())
-    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-    .slice(0, 3);
+  
+  // El contexto ya ha filtrado y ordenado. Solo tomamos las 3 primeras.
+  const upcoming = tasks.slice(0, 3); 
 
   return (
     <div className="dashboard-card event-list"> 
@@ -15,9 +16,8 @@ export default function UpcomingTasks({ tasks = [] }) {
           <ul>
             {upcoming.map(task => (
               <li key={task.id}>
-                {}
                 <span>{task.title}</span>
-                {}
+                {/* Formato de fecha */}
                 <span className="event-date">
                   {new Date(task.dueDate).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                 </span>

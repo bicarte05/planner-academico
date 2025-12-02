@@ -1,5 +1,5 @@
 'use client';
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react'; 
 // Importamos ambas funciones de búsqueda
 import { fetchUserActivities, fetchUserGoals } from '@/actions/goalActions'; 
@@ -13,7 +13,7 @@ export function TaskProvider({ children }) {
   const [showModal, setShowModal] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState(null);
 
-  // --- CARGA UNIFICADA: METAS + ACTIVIDADES ---
+  // --- CARGA UNIFICADA: METAS + ACTIVIDADES (Desde Supabase) ---
   useEffect(() => {
     async function loadAllData() {
       if (session?.user?.id) {
@@ -25,25 +25,25 @@ export function TaskProvider({ children }) {
             fetchUserGoals(session.user.id)
           ]);
           
-          // 2. Procesamos las ACTIVIDADES (Prefijo 'act-')
+          // 2. Procesamos las ACTIVIDADES (TAREAS)
           const formattedActivities = (dbActivities || []).map(act => ({
             ...act,
-            id: `act-${act.id}`, // Prefijo para evitar IDs duplicados
-            originalId: act.id,  // Guardamos ID real por si acaso
-            category: 'tarea',
+            id: `act-${act.id}`, 
+            originalId: act.id,  
+            category: 'tarea', // Categoría clave
+            completed: act.completada || false, 
             dueDate: act.dueDate || new Date().toISOString()
           }));
 
-          // 3. Procesamos las METAS (Prefijo 'goal-')
-          // Adaptamos los campos de la DB (titulo -> title) para que TaskList los entienda
+          // 3. Procesamos las METAS
           const formattedGoals = (dbGoals || []).map(goal => ({
             id: `goal-${goal.id}`,
             originalId: goal.id,
-            title: goal.titulo,          // Mapeo clave
+            title: goal.titulo,          
             description: goal.descripcion,
             completed: goal.completada,
             dueDate: goal.fecha_limite || new Date().toISOString(),
-            category: 'meta'             // Categoría clave para el filtro visual
+            category: 'meta'             // Categoría clave
           }));
 
           // 4. Combinamos todo en una sola lista maestra
@@ -58,34 +58,68 @@ export function TaskProvider({ children }) {
     loadAllData();
   }, [session]); 
 
-  // --- GESTIÓN DE ESTADO ---
+  // --- CÁLCULO DE MÉTRICAS CON useMemo ---
+  const productivityMetrics = useMemo(() => {
+    // 1. Filtramos TAREAS (para Productividad Semanal y Próximas Entregas)
+    const weeklyTasks = tasks.filter(t => t.category === 'tarea');
+    
+    // 2. Filtramos METAS (para Notificaciones)
+    const allGoals = tasks.filter(t => t.category === 'meta');
+    
+    // CÁLCULOS DE PRODUCTIVIDAD (Basado solo en TAREAS)
+    const totalTasks = weeklyTasks.length;
+    const totalCompletedTasks = weeklyTasks.filter(t => t.completed).length;
 
+    // PRÓXIMAS ENTREGAS (Las 5 TAREAS no completadas más cercanas)
+    const upcomingTasks = weeklyTasks
+        .filter(t => !t.completed) 
+        .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+        .slice(0, 5); 
+
+    // NOTIFICACIONES (Las 5 METAS no completadas más cercanas)
+    const upcomingGoals = allGoals
+        .filter(t => !t.completed) 
+        .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+        .slice(0, 5);
+        
+    return {
+        totalTasks,
+        totalCompletedTasks,
+        upcomingTasks,
+        upcomingGoals // <-- Nuevo valor
+    };
+  }, [tasks]);
+
+  // --- GESTIÓN DE ESTADO ---
   const saveTask = (newItemData) => {
-    // Determinamos el prefijo según la categoría que viene del Modal
+    // Determinamos ID temporal y prefijo
+    const tempId = String(Date.now() + Math.random()); 
     const prefix = newItemData.category === 'meta' ? 'goal-' : 'act-';
     
-    // Aseguramos que el ID tenga el formato correcto
     const itemToSave = {
       ...newItemData,
-      id: newItemData.id.toString().startsWith(prefix) ? newItemData.id : `${prefix}${newItemData.id}`,
+      id: newItemData.id || `${prefix}${tempId}`, 
+      completed: newItemData.completed !== undefined ? newItemData.completed : false,
       dueDate: newItemData.dueDate || new Date().toISOString()
     };
-
+    
     if (tasks.some(t => t.id === itemToSave.id)) {
       setTasks(prev => prev.map(t => t.id === itemToSave.id ? { ...t, ...itemToSave } : t));
     } else {
       setTasks(prev => [itemToSave, ...prev]);
     }
+    
+    // NOTA: Implementar la llamada a la función de Supabase para guardar permanentemente
+    
     closeModal();
   };
-
+  
   const deleteTask = (taskId) => {
-    // Filtramos localmente (el prefijo ya viene en taskId)
     setTasks(prev => prev.filter(task => task.id !== taskId));
+    // NOTA: Llamar a Supabase para eliminar en la DB.
   };
 
   const toggleTaskCompleted = (taskId) => {
-    // OPCIONAL: Si es una meta, impedimos que se marque aquí (doble seguridad)
     if (typeof taskId === 'string' && taskId.startsWith('goal-')) {
       return; 
     }
@@ -93,12 +127,11 @@ export function TaskProvider({ children }) {
     setTasks(prev => prev.map(task => 
       task.id === taskId ? { ...task, completed: !task.completed } : task
     ));
+    // NOTA: Llamar a Supabase para actualizar el estado de completado en la DB.
   };
 
   const openModal = () => { setTaskToEdit(null); setShowModal(true); };
   const openEditModal = (task) => { 
-    // Al editar, si tiene prefijo, podríamos querer limpiarlo o manejarlo en el modal
-    // Por ahora pasamos la tarea tal cual, el modal debe manejar los datos visuales
     setTaskToEdit(task); 
     setShowModal(true); 
   };
@@ -107,6 +140,12 @@ export function TaskProvider({ children }) {
   return (
     <TaskContext.Provider value={{
       tasks,
+      // ** VALORES CLAVE EXPUESTOS AL DASHBOARD **
+      totalTasks: productivityMetrics.totalTasks, 
+      totalCompletedTasks: productivityMetrics.totalCompletedTasks,
+      upcomingTasks: productivityMetrics.upcomingTasks, // Próximas Entregas (TAREAS)
+      upcomingGoals: productivityMetrics.upcomingGoals, // Notificaciones (METAS)
+      
       saveTask,
       deleteTask,
       toggleTaskCompleted,

@@ -1,40 +1,31 @@
 // src/components/dashboard/DashboardClient.js
 "use client";
-import React, { useState, useEffect } from 'react'; // <--- NUEVO: Importar React Hooks
+import React from 'react'; 
 import { useTasks } from "../../context/TaskContext";
 import { signOut } from "next-auth/react"; 
 import ProductivityStats from "./ProductivityStats";
 import UpcomingTasks from "./UpcomingTasks";
 import Notifications from "./Notifications";
-import Goals, { fetchGoals } from "./Goals"; // <--- MODIFICADO: Importar fetchGoals
-import CreateTaskModal from '../forms/CreateTaskModal'; // <--- NUEVO: Importar el modal
-
-//import GradeAverage from "./GradeAverage";
+// ELIMINADO: No se necesita Workload.js
+// ELIMINADO: No se necesita Goals.js
+import CreateTaskModal from '../forms/CreateTaskModal'; 
 
 export default function DashboardClient({ session }) {
-  // ** MODIFICADO: Añadir showModal del contexto **
-  const { tasks, totalTasks, totalCompletedTasks, showModal } = useTasks(); 
-  // ** NUEVO: Estado para almacenar las metas **
-  const [availableGoals, setAvailableGoals] = useState([]); 
-
-  // ** NUEVO: Cargar metas al montar el componente **
-  useEffect(() => {
-    const loadGoals = async () => {
-        const goalsList = await fetchGoals();
-        setAvailableGoals(goalsList);
-    };
-    loadGoals();
-  }, []); // El array vacío asegura que se ejecute solo una vez al inicio
+  // Extraemos solo los datos necesarios del contexto:
+  const { 
+    totalTasks, 
+    totalCompletedTasks, 
+    showModal, 
+    upcomingTasks, // Lista de TAREAS próximas (para Próximas Entregas)
+    upcomingGoals  // Lista de METAS próximas (para Notificaciones)
+  } = useTasks(); 
+  
+  // ELIMINADO: La extracción de 'tasks' completa ya no es necesaria si Workload se quita.
 
   const handleLogout = () => {
     signOut({ callbackUrl: '/login' }); 
   };
   
-  const notifications = [
-    { id: 1, message: "Tienes una tarea pendiente para mañana." },
-  ];
-  const productivityGoal = 10;
-
   return (
     <div>
       {/* Contenedor para alinear el título y el botón de logout */}
@@ -66,16 +57,27 @@ export default function DashboardClient({ session }) {
       </div>
 
       <div className="dashboard-grid">
-        <ProductivityStats completedTasks={totalCompletedTasks} totalTasks={totalTasks} />
-        <UpcomingTasks tasks={tasks} />
-        <Notifications notifications={notifications} />
+        {/* Productividad Semanal: Recibe datos de TAREAS calculados */}
+        <ProductivityStats 
+            completedTasks={totalCompletedTasks} 
+            totalTasks={totalTasks} 
+        />
+        
+        {/* Próximas Entregas: Recibe la lista de TAREAS próximas */}
+        <UpcomingTasks tasks={upcomingTasks} />
+        
+        {/* ELIMINADO: El componente <Workload /> ha sido removido de aquí */}
+        
+        {/* Notificaciones: Recibe la lista de METAS próximas */}
+        <Notifications notifications={upcomingGoals} />
        
+        {/* ELIMINADO: El componente Goals ha sido removido de aquí */}
         
       </div>
       
-      {/* ** NUEVO: Renderizar el Modal y pasar las metas disponibles ** */}
+      {/* Modal para crear o editar tareas/metas */}
       {showModal && (
-        <CreateTaskModal availableGoals={availableGoals} /> 
+        <CreateTaskModal /> 
       )}
     </div>
   );
