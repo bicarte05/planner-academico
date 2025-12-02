@@ -1,20 +1,27 @@
+// src/components/dashboard/Notifications.js (MODIFICADO)
 import React from 'react';
 import Link from 'next/link';
 
-// Datos de ejemplo
-const notifications = [
+export default function Notifications({ notifications = [] }) {
+  
+  // Mapeamos los objetos de METAS a objetos de notificación.
+  const formattedNotifications = notifications.map(goal => ({
+      id: goal.id,
+      // Generamos un mensaje específico para la meta.
+      message: `¡ALERTA! Tu meta "${goal.title}" vence el ${new Date(goal.dueDate).toLocaleDateString('es-ES', { month: 'short', day: '2-digit' })}.`
+  }));
 
-];
-
-export default function Notifications() {
+  const displayNotifications = formattedNotifications;
+  
   return (
     <div className="dashboard-card yellow-bg">
-      <h3>Notificaciones</h3>
+      <h3>Notificaciones (Metas)</h3>
       
-      {notifications.length > 0 ? (
+      {/* El resto del renderizado es idéntico */}
+      {displayNotifications.length > 0 ? (
         <>
           <ul className="notification-list">
-            {notifications.map(notification => (
+            {displayNotifications.map(notification => (
               <li key={notification.id}>
                 <span className="material-icons">info</span>
                 <span>{notification.message}</span>
@@ -28,7 +35,7 @@ export default function Notifications() {
       ) : (
         <div className="empty-state">
           <span className="material-icons empty-state-icon" style={{color: 'var(--card-border-yellow)'}}>notifications_none</span>
-          <p>Sin notificaciones nuevas.</p>
+          <p>Sin metas próximas urgentes.</p>
         </div>
       )}
     </div>
